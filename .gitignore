@@ -1,0 +1,58 @@
+# Node / npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json.bak
+
+# Next.js build output
+.next/
+out/
+next-env.d.ts
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/gen/
+src-tauri/WixTools/
+# Note: Cargo.lock is intentionally NOT ignored — committing it ensures reproducible builds for binary apps.
+
+# Build artifacts
+*.exe
+*.msi
+*.dmg
+*.deb
+*.AppImage
+*.snap
+*.app
+
+# Local config / env
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs / temp
+*.log
+*.tmp
+.tmp/
+.cache/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Tauri bundle output (keep source, ignore generated installers)
+src-tauri/target/release/bundle/
+
+# Coverage
+coverage/
+*.lcov
