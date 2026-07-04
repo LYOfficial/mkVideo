@@ -2,6 +2,7 @@
 
 import { useApp } from '@/lib/AppContext';
 import { usePlayer } from '@/lib/PlayerContext';
+import { useT } from '@/lib/i18n';
 
 interface Props {
   onRename: (id: string) => void;
@@ -10,6 +11,7 @@ interface Props {
 export default function CollectionList({ onRename }: Props) {
   const { data, removeCollection } = useApp();
   const { selectedCollectionId, setSelectedCollectionId } = usePlayer();
+  const t = useT();
 
   return (
     <div>
@@ -54,14 +56,14 @@ export default function CollectionList({ onRename }: Props) {
                 style={{ fontSize: 11, marginTop: 2 }}
                 title={c.path}
               >
-                {c.videos.length} video{c.videos.length === 1 ? '' : 's'} · {sizeStr}
+                {t.videoCount(c.videos.length)} · {sizeStr}
               </div>
             </div>
             <div className="flex items-center gap-1">
               <button
                 className="btn btn-ghost btn-icon"
-                title="Rename"
-                aria-label="Rename"
+                title={t.renameCollection}
+                aria-label={t.renameCollection}
                 onClick={(e) => {
                   e.stopPropagation();
                   onRename(c.id);
@@ -72,11 +74,11 @@ export default function CollectionList({ onRename }: Props) {
               </button>
               <button
                 className="btn btn-ghost btn-icon"
-                title="Remove"
-                aria-label="Remove"
+                title={t.removeCollection}
+                aria-label={t.removeCollection}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (confirm(`Remove collection "${c.name}"?\nThis will not delete files from disk.`)) {
+                  if (confirm(t.confirmRemoveCollection(c.name))) {
                     if (selectedCollectionId === c.id) {
                       setSelectedCollectionId(null);
                     }

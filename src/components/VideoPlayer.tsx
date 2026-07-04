@@ -5,6 +5,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { isTauriEnv } from '@/lib/storage';
 import { useApp } from '@/lib/AppContext';
 import { usePlayer } from '@/lib/PlayerContext';
+import { useT } from '@/lib/i18n';
 import type { Collection, Mask, MaskTemplate, VideoFile } from '@/lib/types';
 import MaskCanvas, { type MaskWithTemplate } from './MaskCanvas';
 import PlayerControls from './PlayerControls';
@@ -18,6 +19,7 @@ interface Props {
 export default function VideoPlayer({ collection }: Props) {
   const { selectedVideoId, setSelectedVideoId } = usePlayer();
   const { data, updateTemplate, getTemplatesForVideo } = useApp();
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [duration, setDuration] = useState(0);
@@ -147,7 +149,7 @@ export default function VideoPlayer({ collection }: Props) {
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play().catch((e) => setError(`Cannot play: ${e.message || e}`));
+      v.play().catch((e) => setError(`无法播放：${e.message || e}`));
     } else {
       v.pause();
     }
@@ -298,10 +300,10 @@ export default function VideoPlayer({ collection }: Props) {
               marginBottom: 6,
             }}
           >
-            Select a video
+            {t.selectVideo}
           </div>
           <div style={{ fontSize: 12 }}>
-            Pick a video from the list, or press <kbd>←</kbd>/<kbd>→</kbd> to switch.
+            {t.selectVideoHint}
           </div>
         </div>
       </section>
@@ -379,7 +381,7 @@ export default function VideoPlayer({ collection }: Props) {
               }}
               onError={() => {
                 setError(
-                  `Cannot play "${video.name}". The codec may not be supported by this build. Try installing additional codecs.`,
+                  `${t.cannotPlay(video.name)}${t.cannotPlayHint ? '。' + t.cannotPlayHint : ''}`,
                 );
               }}
               onClick={togglePlay}

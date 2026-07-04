@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { usePlayer } from '@/lib/PlayerContext';
+import { useT } from '@/lib/i18n';
 import type { Collection } from '@/lib/types';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 
 export default function VideoList({ collection }: Props) {
   const { selectedVideoId, setSelectedVideoId } = usePlayer();
+  const t = useT();
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -40,7 +42,7 @@ export default function VideoList({ collection }: Props) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search videos…"
+          placeholder={t.searchVideosPlaceholder}
           style={{ width: '100%', fontSize: 12 }}
         />
       </div>
@@ -55,7 +57,7 @@ export default function VideoList({ collection }: Props) {
               fontSize: 12,
             }}
           >
-            {collection.videos.length === 0 ? 'No videos in this folder.' : 'No videos match search.'}
+            {collection.videos.length === 0 ? t.noVideosInFolder : t.noVideosMatchSearch}
           </div>
         ) : (
           filtered.map((v) => {

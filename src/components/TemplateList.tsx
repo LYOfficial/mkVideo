@@ -2,10 +2,12 @@
 
 import { useApp } from '@/lib/AppContext';
 import { usePlayer } from '@/lib/PlayerContext';
+import { useT } from '@/lib/i18n';
 
 export default function TemplateList() {
-  const { data, removeTemplate, updateTemplate, applyTemplate, removeApplication } = useApp();
+  const { data, removeTemplate, applyTemplate, removeApplication } = useApp();
   const { selectedCollectionId, selectedVideoId } = usePlayer();
+  const t = useT();
 
   const templatesEmpty = data.templates.length === 0;
 
@@ -29,20 +31,18 @@ export default function TemplateList() {
         >
           <div style={{ fontSize: 28, marginBottom: 8 }}>🎭</div>
           <div style={{ marginBottom: 4, color: 'var(--text-secondary)', fontWeight: 600 }}>
-            No templates yet
+            {t.noTemplates}
           </div>
-          <div>
-            While watching a video, draw some masks and click "Save as Template" to create a reusable mask template.
-          </div>
+          <div>{t.noTemplatesHint}</div>
         </div>
       ) : (
         <>
           <div className="text-tertiary" style={{ fontSize: 11, margin: '8px 0 6px 0' }}>
-            Templates can be batch-applied to a video, a collection, or all videos.
+            {t.applyTo}
           </div>
-          {data.templates.map((t) => (
+          {data.templates.map((tt) => (
             <div
-              key={t.id}
+              key={tt.id}
               style={{
                 padding: '10px 12px',
                 background: 'var(--bg-tertiary)',
@@ -53,21 +53,21 @@ export default function TemplateList() {
             >
               <div className="flex items-center justify-between">
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="truncate" style={{ fontWeight: 600, fontSize: 13 }} title={t.name}>
-                    {t.name}
+                  <div className="truncate" style={{ fontWeight: 600, fontSize: 13 }} title={tt.name}>
+                    {tt.name}
                   </div>
                   <div className="text-tertiary" style={{ fontSize: 11, marginTop: 2 }}>
-                    {t.masks.length} mask{t.masks.length === 1 ? '' : 's'}
+                    {t.videoCount(tt.masks.length)}
                   </div>
                 </div>
                 <button
                   className="btn btn-ghost btn-icon"
                   style={{ width: 24, height: 24, color: 'var(--danger)' }}
-                  title="Delete template"
-                  aria-label="Delete template"
+                  title={t.deleteTemplate}
+                  aria-label={t.deleteTemplate}
                   onClick={() => {
-                    if (confirm(`Delete template "${t.name}"?\nThis will also remove all its applications.`)) {
-                      removeTemplate(t.id);
+                    if (confirm(t.confirmDeleteTemplate(tt.name))) {
+                      removeTemplate(tt.id);
                     }
                   }}
                 >
@@ -75,54 +75,54 @@ export default function TemplateList() {
                 </button>
               </div>
               <div className="flex items-center" style={{ gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
-                <span className="text-tertiary" style={{ fontSize: 11 }}>Apply to:</span>
+                <span className="text-tertiary" style={{ fontSize: 11 }}>{t.applyTo}</span>
                 {selectedVideoId && selectedCollectionId ? (
                   <button
-                    className={`btn ${isApplied(t.id, 'video', selectedVideoId) ? 'btn-primary' : ''}`}
+                    className={`btn ${isApplied(tt.id, 'video', selectedVideoId) ? 'btn-primary' : ''}`}
                     style={{ padding: '2px 8px', fontSize: 11 }}
                     onClick={() => {
-                      if (isApplied(t.id, 'video', selectedVideoId)) {
-                        removeApplication(t.id, 'video', selectedVideoId);
+                      if (isApplied(tt.id, 'video', selectedVideoId)) {
+                        removeApplication(tt.id, 'video', selectedVideoId);
                       } else {
-                        applyTemplate(t.id, 'video', selectedVideoId);
+                        applyTemplate(tt.id, 'video', selectedVideoId);
                       }
                     }}
-                    title="Current video"
+                    title={t.applyVideo}
                   >
-                    🎬 Video
+                    {t.applyVideo}
                   </button>
                 ) : null}
                 {selectedCollectionId ? (
                   <button
                     className={`btn ${
-                      isApplied(t.id, 'collection', selectedCollectionId) ? 'btn-primary' : ''
+                      isApplied(tt.id, 'collection', selectedCollectionId) ? 'btn-primary' : ''
                     }`}
                     style={{ padding: '2px 8px', fontSize: 11 }}
                     onClick={() => {
-                      if (isApplied(t.id, 'collection', selectedCollectionId)) {
-                        removeApplication(t.id, 'collection', selectedCollectionId);
+                      if (isApplied(tt.id, 'collection', selectedCollectionId)) {
+                        removeApplication(tt.id, 'collection', selectedCollectionId);
                       } else {
-                        applyTemplate(t.id, 'collection', selectedCollectionId);
+                        applyTemplate(tt.id, 'collection', selectedCollectionId);
                       }
                     }}
-                    title="Current collection"
+                    title={t.applyCollection}
                   >
-                    📁 Collection
+                    {t.applyCollection}
                   </button>
                 ) : null}
                 <button
-                  className={`btn ${isApplied(t.id, 'all', 'all') ? 'btn-primary' : ''}`}
+                  className={`btn ${isApplied(tt.id, 'all', 'all') ? 'btn-primary' : ''}`}
                   style={{ padding: '2px 8px', fontSize: 11 }}
                   onClick={() => {
-                    if (isApplied(t.id, 'all', 'all')) {
-                      removeApplication(t.id, 'all', 'all');
+                    if (isApplied(tt.id, 'all', 'all')) {
+                      removeApplication(tt.id, 'all', 'all');
                     } else {
-                      applyTemplate(t.id, 'all', 'all');
+                      applyTemplate(tt.id, 'all', 'all');
                     }
                   }}
-                  title="All videos"
+                  title={t.applyAll}
                 >
-                  🌐 All
+                  {t.applyAll}
                 </button>
               </div>
             </div>

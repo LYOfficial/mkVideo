@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "mkVideo - MarkAVideo",
+        "title": "mkVideo - 马克视频",
         "width": 1280,
         "height": 800,
         "minWidth": 900,
@@ -21,19 +21,30 @@
         "resizable": true,
         "fullscreen": false,
         "center": true,
-        "decorations": true,
+        "decorations": false,
         "transparent": false,
         "alwaysOnTop": false,
         "skipTaskbar": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": ["**"],
+          "deny": []
+        }
+      }
     }
   },
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "publisher": "LYOfficial",
+    "category": "Video",
+    "shortDescription": "mkVideo - 马克视频：在视频上画遮罩，遮挡水印与字幕",
+    "longDescription": "mkVideo 是一款 Windows 视频播放器，内置遮罩画笔工具箱：支持矩形、圆形、椭圆、多边形、自由曲线等多种形状，可任意填充颜色；提供类似 Photoshop 的图层管理，可对遮罩进行选择、移动、缩放、编辑顶点、删除等操作。绘制好的遮罩可保存为模板，并一键批量应用到指定视频、整个播放合集，或库中的全部视频。",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -41,17 +52,12 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "category": "Video",
-    "shortDescription": "MarkAVideo - Video player with mask drawing",
-    "longDescription": "A Windows video player that allows you to add mask shapes (rectangle, circle, ellipse, polygon, custom curve) over the video to hide watermarks, subtitles, and other unwanted content. Supports batch mask application to videos, collections, or all videos.",
-    "publisher": "LYOfficial",
     "windows": {
-      "nsis": {}
+      "nsis": {
+        "languages": ["SimpChinese"],
+        "displayLanguageSelector": false
+      }
     }
   },
-  "plugins": {
-    "fs": {
-      "scope": ["**"]
-    }
-  }
+  "plugins": {}
 }

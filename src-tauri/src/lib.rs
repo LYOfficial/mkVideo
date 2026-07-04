@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager};
 use walkdir::WalkDir;
 
@@ -43,13 +45,19 @@ fn is_video_file(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
+/// Globally-monotonic id generator.
+///
+/// Combines a millisecond timestamp with an atomic counter so that two
+/// ids produced within the same millisecond (which happens routinely while
+/// scanning a folder with many files) are guaranteed unique.
 fn generate_id() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let counter = COUNTER.fetch_add(1, Ordering::SeqCst);
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis();
-    format!("id_{:x}", timestamp)
+    format!("id_{:x}_{:x}", timestamp, counter)
 }
 
 #[tauri::command]

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useApp } from '@/lib/AppContext';
-import { open } from '@tauri-apps/plugin-dialog';
+import { useT } from '@/lib/i18n';
 import { scanFolder } from '@/lib/tauri';
 import CollectionList from './CollectionList';
 import TemplateList from './TemplateList';
@@ -13,6 +13,7 @@ type Tab = 'collections' | 'templates';
 
 export default function Sidebar() {
   const { data, addCollection } = useApp();
+  const t = useT();
   const [tab, setTab] = useState<Tab>('collections');
   const [adding, setAdding] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -61,7 +62,7 @@ export default function Sidebar() {
             marginBottom: -1,
           }}
         >
-          Collections
+          {t.collections}
         </button>
         <button
           className="btn btn-ghost"
@@ -75,7 +76,7 @@ export default function Sidebar() {
             marginBottom: -1,
           }}
         >
-          Templates
+          {t.templates}
         </button>
       </div>
 
@@ -86,7 +87,7 @@ export default function Sidebar() {
             style={{ padding: '10px 12px' }}
           >
             <span className="text-secondary" style={{ fontSize: 12, fontWeight: 600 }}>
-              {data.collections.length} collection{data.collections.length === 1 ? '' : 's'}
+              {t.collectionCount(data.collections.length)}
             </span>
             <button
               className="btn btn-primary"
@@ -94,7 +95,7 @@ export default function Sidebar() {
               disabled={scanning}
               style={{ padding: '4px 10px', fontSize: 12 }}
             >
-              + Add
+              + {t.addCollection}
             </button>
           </div>
           <div className="flex-1" style={{ overflowY: 'auto' }}>
@@ -110,9 +111,9 @@ export default function Sidebar() {
               >
                 <div style={{ fontSize: 28, marginBottom: 8 }}>📁</div>
                 <div style={{ marginBottom: 4, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  No collections yet
+                  {t.noCollections}
                 </div>
-                <div>Click "Add" to add a local folder.</div>
+                <div>{t.noCollectionsHint}</div>
               </div>
             ) : (
               <CollectionList onRename={(id) => setRenamingId(id)} />
@@ -128,7 +129,7 @@ export default function Sidebar() {
             style={{ padding: '10px 12px' }}
           >
             <span className="text-secondary" style={{ fontSize: 12, fontWeight: 600 }}>
-              Mask templates
+              {t.maskTemplates}
             </span>
           </div>
           <div className="flex-1" style={{ overflowY: 'auto' }}>

@@ -2,12 +2,14 @@
 
 import { useApp } from '@/lib/AppContext';
 import { usePlayer } from '@/lib/PlayerContext';
+import { useT } from '@/lib/i18n';
 import VideoList from './VideoList';
 import VideoPlayer from './VideoPlayer';
 
 export default function MainView() {
   const { data } = useApp();
   const { selectedCollectionId } = usePlayer();
+  const t = useT();
   const collection = data.collections.find((c) => c.id === selectedCollectionId);
 
   if (!collection) {
@@ -33,11 +35,10 @@ export default function MainView() {
               fontWeight: 600,
             }}
           >
-            Welcome to mkVideo
+            {t.welcome}
           </div>
           <div style={{ fontSize: 13, maxWidth: 420, lineHeight: 1.5 }}>
-            Add a folder of videos from the sidebar to get started. Draw mask shapes over the video to hide
-            watermarks, subtitles, and other unwanted content.
+            {t.welcomeHint}
           </div>
         </div>
       </main>

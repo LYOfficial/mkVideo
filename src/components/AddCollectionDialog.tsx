@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { isTauriEnv } from '@/lib/storage';
+import { useT } from '@/lib/i18n';
 
 interface Props {
   onClose: () => void;
@@ -13,17 +14,18 @@ interface Props {
 
 export default function AddCollectionDialog({ onClose, onSelect, scanning, error }: Props) {
   const [path, setPath] = useState('');
+  const t = useT();
 
   const browse = async () => {
     if (!isTauriEnv()) {
-      alert('Folder picker is only available in the desktop app. Run "npm run tauri:dev" to test.');
+      alert(t.browseOnlyInDesktop);
       return;
     }
     try {
       const result = await open({
         directory: true,
         multiple: false,
-        title: 'Select a video folder',
+        title: t.addCollectionDialogTitle,
       });
       if (typeof result === 'string') {
         setPath(result);
@@ -57,9 +59,9 @@ export default function AddCollectionDialog({ onClose, onSelect, scanning, error
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ fontSize: 16, fontWeight: 600 }}>Add a collection</div>
+        <div style={{ fontSize: 16, fontWeight: 600 }}>{t.addCollectionDialogTitle}</div>
         <div className="text-secondary" style={{ fontSize: 12 }}>
-          Select a folder containing videos. mkVideo will scan for supported video files (mp4, mkv, avi, mov, etc.).
+          {t.addCollectionDialogDesc}
         </div>
 
         <div className="flex items-center" style={{ gap: 8 }}>
@@ -67,11 +69,11 @@ export default function AddCollectionDialog({ onClose, onSelect, scanning, error
             type="text"
             value={path}
             onChange={(e) => setPath(e.target.value)}
-            placeholder="C:\path\to\your\videos"
+            placeholder={t.browsePlaceholder}
             style={{ flex: 1 }}
           />
           <button className="btn" onClick={browse} disabled={scanning}>
-            Browse…
+            {t.browse}
           </button>
         </div>
 
@@ -92,7 +94,7 @@ export default function AddCollectionDialog({ onClose, onSelect, scanning, error
 
         <div className="flex items-center justify-end" style={{ gap: 8, marginTop: 8 }}>
           <button className="btn" onClick={onClose} disabled={scanning}>
-            Cancel
+            {t.cancel}
           </button>
           <button
             className="btn btn-primary"
@@ -101,7 +103,7 @@ export default function AddCollectionDialog({ onClose, onSelect, scanning, error
             }}
             disabled={!path.trim() || scanning}
           >
-            {scanning ? 'Scanning…' : 'Add'}
+            {scanning ? t.scanning : t.add}
           </button>
         </div>
       </div>

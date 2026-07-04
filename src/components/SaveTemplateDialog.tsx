@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useApp } from '@/lib/AppContext';
+import { useT } from '@/lib/i18n';
 import type { Mask } from '@/lib/types';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 
 export default function SaveTemplateDialog({ masks, onClose }: Props) {
   const { addTemplate, updateTemplate, data } = useApp();
+  const t = useT();
   const [name, setName] = useState('');
   const [updateExisting, setUpdateExisting] = useState<string | null>(null);
 
@@ -34,13 +36,13 @@ export default function SaveTemplateDialog({ masks, onClose }: Props) {
         >
           <div style={{ fontSize: 32, marginBottom: 8 }}>🎭</div>
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
-            No masks to save
+            {t.noMasksToSave}
           </div>
           <div className="text-tertiary" style={{ fontSize: 12, marginBottom: 16 }}>
-            Draw some masks first, then come back to save them as a reusable template.
+            {t.noMasksToSaveHint}
           </div>
           <button className="btn btn-primary" onClick={onClose}>
-            OK
+            {t.ok}
           </button>
         </div>
       </div>
@@ -51,13 +53,12 @@ export default function SaveTemplateDialog({ masks, onClose }: Props) {
     const trimmed = name.trim();
     if (!trimmed && !updateExisting) return;
     if (updateExisting) {
-      // Replace masks of an existing template
-      const tpl = data.templates.find((t) => t.id === updateExisting);
+      const tpl = data.templates.find((tt) => tt.id === updateExisting);
       if (tpl) {
         updateTemplate(tpl.id, { name: trimmed || tpl.name, masks });
       }
     } else {
-      addTemplate(trimmed || 'Untitled Template', masks);
+      addTemplate(trimmed || t.untitledTemplate, masks);
     }
     onClose();
   };
@@ -81,20 +82,19 @@ export default function SaveTemplateDialog({ masks, onClose }: Props) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ fontSize: 16, fontWeight: 600 }}>Save mask template</div>
+        <div style={{ fontSize: 16, fontWeight: 600 }}>{t.saveTemplateTitle}</div>
         <div className="text-secondary" style={{ fontSize: 12 }}>
-          Save these {masks.length} mask{masks.length === 1 ? '' : 's'} as a reusable template.
-          You can then apply this template to a video, a whole collection, or all videos at once.
+          {t.saveTemplateDesc(masks.length)}
         </div>
 
         <div className="text-tertiary" style={{ fontSize: 11 }}>
-          Template name
+          模板名称
         </div>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Watermark removal"
+          placeholder={t.templateNamePlaceholder}
           autoFocus
           onKeyDown={(e) => {
             if (e.key === 'Enter') submit();
@@ -105,7 +105,7 @@ export default function SaveTemplateDialog({ masks, onClose }: Props) {
         {data.templates.length > 0 && (
           <div>
             <div className="text-tertiary" style={{ fontSize: 11, marginBottom: 6 }}>
-              Or update an existing template:
+              {t.orUpdateExisting}
             </div>
             <div
               style={{
@@ -115,22 +115,22 @@ export default function SaveTemplateDialog({ masks, onClose }: Props) {
                 borderRadius: 6,
               }}
             >
-              {data.templates.map((t) => (
+              {data.templates.map((tt) => (
                 <div
-                  key={t.id}
-                  onClick={() => setUpdateExisting(updateExisting === t.id ? null : t.id)}
+                  key={tt.id}
+                  onClick={() => setUpdateExisting(updateExisting === tt.id ? null : tt.id)}
                   style={{
                     padding: '6px 10px',
                     cursor: 'pointer',
-                    background: updateExisting === t.id ? 'var(--bg-tertiary)' : 'transparent',
+                    background: updateExisting === tt.id ? 'var(--bg-tertiary)' : 'transparent',
                     borderLeft:
-                      updateExisting === t.id ? '3px solid var(--accent)' : '3px solid transparent',
+                      updateExisting === tt.id ? '3px solid var(--accent)' : '3px solid transparent',
                     fontSize: 12,
                   }}
                 >
-                  <div style={{ fontWeight: 600 }}>{t.name}</div>
+                  <div style={{ fontWeight: 600 }}>{tt.name}</div>
                   <div className="text-tertiary" style={{ fontSize: 10 }}>
-                    {t.masks.length} mask{t.masks.length === 1 ? '' : 's'}
+                    {t.videoCount(tt.masks.length)}
                   </div>
                 </div>
               ))}
@@ -140,14 +140,14 @@ export default function SaveTemplateDialog({ masks, onClose }: Props) {
 
         <div className="flex items-center justify-end" style={{ gap: 8, marginTop: 8 }}>
           <button className="btn" onClick={onClose}>
-            Cancel
+            {t.cancel}
           </button>
           <button
             className="btn btn-primary"
             onClick={submit}
             disabled={!name.trim() && !updateExisting}
           >
-            {updateExisting ? 'Update' : 'Save'}
+            {updateExisting ? t.update : t.save}
           </button>
         </div>
       </div>

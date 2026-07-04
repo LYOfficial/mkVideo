@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Mask } from '@/lib/types';
 import type { MaskWithTemplate } from './MaskCanvas';
+import { useT } from '@/lib/i18n';
 
 interface Props {
   masks: (Mask | MaskWithTemplate)[];
@@ -24,15 +25,16 @@ export default function LayerPanel({ masks, onClose }: Props) {
   const [tool, setTool] = useState<'select' | 'rect' | 'circle' | 'ellipse' | 'polygon' | 'curve'>('select');
   const [fillColor, setFillColor] = useState('#000000');
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
+  const t = useT();
 
-  const handleSetTool = (t: typeof tool) => {
-    setTool(t);
+  const handleSetTool = (tt: typeof tool) => {
+    setTool(tt);
     setSelectedId(null);
     if (window.__maskCanvasApi) {
-      if (t === 'select') {
+      if (tt === 'select') {
         window.__maskCanvasApi.setTool({ kind: 'select' });
       } else {
-        window.__maskCanvasApi.setTool({ kind: 'draw', shape: t, fill: fillColor });
+        window.__maskCanvasApi.setTool({ kind: 'draw', shape: tt, fill: fillColor });
       }
     }
   };
@@ -47,24 +49,17 @@ export default function LayerPanel({ masks, onClose }: Props) {
   const handleSelectLayer = (id: string) => {
     setSelectedId(id);
     if (window.__maskCanvasApi) {
-      // Switch to select tool when picking a layer
       window.__maskCanvasApi.setTool({ kind: 'select' });
     }
     setTool('select');
   };
 
   const handleDeleteLayer = (id: string) => {
-    // The MaskCanvas owns the mask state and provides a delete via API
-    // We just call its delete for the currently selected one.
     if (window.__maskCanvasApi) {
       const cur = window.__maskCanvasApi.getSelectedId();
       if (cur === id) {
         window.__maskCanvasApi.removeSelected();
       } else {
-        // need to select first, then delete
-        // workaround: directly mutate by selecting via tool change
-        // simpler: just remove by selecting first
-        // We'll fall back to a custom event approach below.
         window.dispatchEvent(new CustomEvent('mk:remove-mask', { detail: { id } }));
       }
     }
@@ -84,11 +79,11 @@ export default function LayerPanel({ masks, onClose }: Props) {
     });
   };
 
-  const toolButton = (t: typeof tool, label: string, key: string) => (
+  const toolButton = (tt: typeof tool, label: string, key: string) => (
     <button
       key={key}
-      className={`btn ${tool === t ? 'btn-primary' : ''}`}
-      onClick={() => handleSetTool(t)}
+      className={`btn ${tool === tt ? 'btn-primary' : ''}`}
+      onClick={() => handleSetTool(tt)}
       title={label}
       style={{ flex: 1, padding: '6px 4px', fontSize: 11 }}
     >
@@ -113,13 +108,13 @@ export default function LayerPanel({ masks, onClose }: Props) {
           borderBottom: '1px solid var(--border-color)',
         }}
       >
-        <span style={{ fontSize: 12, fontWeight: 600 }}>🎭 Mask Tools</span>
+        <span style={{ fontSize: 12, fontWeight: 600 }}>{t.maskTools}</span>
         <button
           className="btn btn-ghost btn-icon"
           onClick={onClose}
           style={{ width: 22, height: 22, fontSize: 12 }}
-          title="Hide layer panel"
-          aria-label="Hide layer panel"
+          title={t.hidePanel}
+          aria-label={t.hidePanel}
         >
           ✕
         </button>
@@ -128,21 +123,21 @@ export default function LayerPanel({ masks, onClose }: Props) {
       {/* Tool buttons */}
       <div style={{ padding: 10, borderBottom: '1px solid var(--border-color)' }}>
         <div className="flex" style={{ gap: 4 }}>
-          {toolButton('select', '✋ Select', 'select')}
-          {toolButton('rect', '▭ Rect', 'rect')}
+          {toolButton('select', t.selectTool, 'select')}
+          {toolButton('rect', t.rectTool, 'rect')}
         </div>
         <div className="flex" style={{ gap: 4, marginTop: 4 }}>
-          {toolButton('circle', '○ Circle', 'circle')}
-          {toolButton('ellipse', '⬭ Ellipse', 'ellipse')}
+          {toolButton('circle', t.circleTool, 'circle')}
+          {toolButton('ellipse', t.ellipseTool, 'ellipse')}
         </div>
         <div className="flex" style={{ gap: 4, marginTop: 4 }}>
-          {toolButton('polygon', '⬡ Polygon', 'polygon')}
-          {toolButton('curve', '∿ Curve', 'curve')}
+          {toolButton('polygon', t.polygonTool, 'polygon')}
+          {toolButton('curve', t.curveTool, 'curve')}
         </div>
 
         <div className="flex items-center" style={{ gap: 8, marginTop: 10 }}>
           <label className="text-tertiary" style={{ fontSize: 11, minWidth: 38 }}>
-            Fill:
+            {t.fillLabel}
           </label>
           <input
             type="color"
@@ -156,7 +151,7 @@ export default function LayerPanel({ masks, onClose }: Props) {
               borderRadius: 4,
               background: 'transparent',
             }}
-            title="Fill color"
+            title={t.fillLabel}
           />
           <input
             type="text"
@@ -168,7 +163,7 @@ export default function LayerPanel({ masks, onClose }: Props) {
             className="btn btn-ghost"
             onClick={() => handleFillChange('transparent')}
             style={{ fontSize: 10, padding: '4px 8px' }}
-            title="Reset to default black"
+            title={t.resetColor}
           >
             ⟲
           </button>
@@ -179,10 +174,10 @@ export default function LayerPanel({ masks, onClose }: Props) {
           style={{ fontSize: 10, marginTop: 8, lineHeight: 1.4 }}
         >
           {tool === 'select'
-            ? 'Click on a mask to select. Drag handles to resize. Drag inside to move. Click "Edit Points" on polygon/curve layers to edit vertices.'
+            ? t.selectToolHint
             : tool === 'rect' || tool === 'circle' || tool === 'ellipse'
-            ? 'Drag on the video to draw a new mask.'
-            : 'Click to add points. Double-click or press Enter to finish. Press Esc to cancel.'}
+            ? t.drawShapeHint
+            : t.drawPolyHint}
         </div>
       </div>
 
@@ -192,7 +187,7 @@ export default function LayerPanel({ masks, onClose }: Props) {
         style={{ padding: '8px 12px 4px 12px' }}
       >
         <span className="text-secondary" style={{ fontSize: 11, fontWeight: 600 }}>
-          Layers ({masks.length})
+          {t.layersCount(masks.length)}
         </span>
       </div>
       <div className="flex-1" style={{ overflowY: 'auto' }}>
@@ -208,8 +203,8 @@ export default function LayerPanel({ masks, onClose }: Props) {
             }}
           >
             <div style={{ fontSize: 22, marginBottom: 6 }}>🎭</div>
-            <div>No masks on this video yet.</div>
-            <div>Pick a shape above and draw on the video.</div>
+            <div>{t.noMasks}</div>
+            <div>{t.noMasksHint}</div>
           </div>
         ) : (
           [...masks].reverse().map((m: any) => {
@@ -265,15 +260,15 @@ export default function LayerPanel({ masks, onClose }: Props) {
                     {m.name || m.type}
                   </div>
                   <div className="text-tertiary" style={{ fontSize: 10 }}>
-                    Opacity {(m.opacity * 100).toFixed(0)}%{(m as MaskWithTemplate)._templateId ? ' · from template' : ''}
+                    不透明度 {(m.opacity * 100).toFixed(0)}%{m._templateId ? t.fromTemplate : ''}
                   </div>
                 </div>
                 <div className="flex items-center" style={{ gap: 2 }}>
                   {(m.type === 'polygon' || m.type === 'curve') && (
                     <button
                       className={`btn btn-ghost btn-icon ${isEditing ? 'btn-primary' : ''}`}
-                      title={isEditing ? 'Stop editing' : 'Edit points'}
-                      aria-label="Edit points"
+                      title={isEditing ? t.stopEditing : t.editPoints}
+                      aria-label={t.editPoints}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditToggle(m.id);
@@ -285,8 +280,8 @@ export default function LayerPanel({ masks, onClose }: Props) {
                   )}
                   <button
                     className="btn btn-ghost btn-icon"
-                    title="Delete"
-                    aria-label="Delete"
+                    title={t.deleteLayer}
+                    aria-label={t.deleteLayer}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteLayer(m.id);
@@ -319,7 +314,7 @@ export default function LayerPanel({ masks, onClose }: Props) {
           }}
           disabled={masks.length === 0}
         >
-          Clear all
+          {t.clearAll}
         </button>
       </div>
     </aside>

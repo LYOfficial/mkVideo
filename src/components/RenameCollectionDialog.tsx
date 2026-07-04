@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useApp } from '@/lib/AppContext';
+import { useT } from '@/lib/i18n';
 
 interface Props {
   collectionId: string;
@@ -10,6 +11,7 @@ interface Props {
 
 export default function RenameCollectionDialog({ collectionId, onClose }: Props) {
   const { data, renameCollection } = useApp();
+  const t = useT();
   const collection = data.collections.find((c) => c.id === collectionId);
   const [name, setName] = useState(collection?.name || '');
 
@@ -49,18 +51,18 @@ export default function RenameCollectionDialog({ collectionId, onClose }: Props)
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ fontSize: 16, fontWeight: 600 }}>Rename collection</div>
+        <div style={{ fontSize: 16, fontWeight: 600 }}>{t.renameDialogTitle}</div>
         <div className="text-secondary" style={{ fontSize: 12 }}>
-          The display name can be different from the folder name on disk.
+          {t.renameDialogDesc}
         </div>
         <div className="text-tertiary" style={{ fontSize: 11 }}>
-          Folder: {collection.path}
+          {t.folderLabel} {collection.path}
         </div>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Collection name"
+          placeholder={t.collectionNamePlaceholder}
           autoFocus
           onKeyDown={(e) => {
             if (e.key === 'Enter') submit();
@@ -69,10 +71,10 @@ export default function RenameCollectionDialog({ collectionId, onClose }: Props)
         />
         <div className="flex items-center justify-end" style={{ gap: 8 }}>
           <button className="btn" onClick={onClose}>
-            Cancel
+            {t.cancel}
           </button>
           <button className="btn btn-primary" onClick={submit} disabled={!name.trim()}>
-            Save
+            {t.save}
           </button>
         </div>
       </div>

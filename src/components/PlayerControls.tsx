@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { VideoFile } from '@/lib/types';
 import type { RefObject } from 'react';
+import { useT } from '@/lib/i18n';
 
 interface Props {
   videoRef: RefObject<HTMLVideoElement>;
@@ -54,6 +55,7 @@ export default function PlayerControls({
   const [showVolume, setShowVolume] = useState(false);
   const speedRef = useRef<HTMLDivElement>(null);
   const volRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -140,16 +142,16 @@ export default function PlayerControls({
         <button
           className="btn btn-ghost btn-icon"
           onClick={() => onStepFrame(-1)}
-          title="Previous frame (,)"
-          aria-label="Previous frame"
+          title={`${t.previousFrame} (←)`}
+          aria-label={t.previousFrame}
         >
           ⏮
         </button>
         <button
           className="btn btn-ghost btn-icon"
           onClick={onTogglePlay}
-          title={playing ? 'Pause (Space)' : 'Play (Space)'}
-          aria-label={playing ? 'Pause' : 'Play'}
+          title={playing ? `${t.pause} (空格)` : `${t.play} (空格)`}
+          aria-label={playing ? t.pause : t.play}
           style={{ fontSize: 18, width: 36, height: 30 }}
         >
           {playing ? '⏸' : '▶'}
@@ -157,8 +159,8 @@ export default function PlayerControls({
         <button
           className="btn btn-ghost btn-icon"
           onClick={() => onStepFrame(1)}
-          title="Next frame (.)"
-          aria-label="Next frame"
+          title={`${t.nextFrame} (→)`}
+          aria-label={t.nextFrame}
         >
           ⏭
         </button>
@@ -168,8 +170,8 @@ export default function PlayerControls({
           <button
             className="btn btn-ghost btn-icon"
             onClick={onToggleMute}
-            title={muted ? 'Unmute (M)' : 'Mute (M)'}
-            aria-label={muted ? 'Unmute' : 'Mute'}
+            title={muted ? `${t.unmute} (M)` : `${t.mute} (M)`}
+            aria-label={muted ? t.unmute : t.mute}
           >
             {muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔈' : '🔊'}
           </button>
@@ -217,19 +219,19 @@ export default function PlayerControls({
         <button
           className={`btn ${showLayers ? 'btn-primary' : ''}`}
           onClick={onToggleLayers}
-          title="Toggle mask panel"
-          aria-label="Toggle mask panel"
+          title={t.toggleMaskPanel}
+          aria-label={t.toggleMaskPanel}
           style={{ fontSize: 12 }}
         >
-          🎭 Masks
+          🎭 {t.toggleMaskPanel}
         </button>
         <button
           className="btn"
           onClick={onSaveTemplate}
-          title="Save current masks as a reusable template"
+          title={t.saveAsTemplateHint}
           style={{ fontSize: 12 }}
         >
-          💾 Save as Template
+          💾 {t.saveAsTemplate}
         </button>
 
         <div style={{ width: 8 }} />
@@ -238,8 +240,8 @@ export default function PlayerControls({
         <button
           className={`btn btn-ghost btn-icon ${loop ? 'btn-primary' : ''}`}
           onClick={onToggleLoop}
-          title={loop ? 'Loop on (L)' : 'Loop off (L)'}
-          aria-label="Toggle loop"
+          title={loop ? `${t.loopOn} (L)` : `${t.loopOff} (L)`}
+          aria-label={t.toggleLoop}
         >
           🔁
         </button>
@@ -249,7 +251,7 @@ export default function PlayerControls({
           <button
             className="btn"
             onClick={() => setShowSpeedMenu((v) => !v)}
-            title="Playback speed"
+            title={t.playbackSpeed}
             style={{ fontSize: 12, minWidth: 56 }}
           >
             {playbackRate}×
@@ -294,8 +296,8 @@ export default function PlayerControls({
         <button
           className="btn btn-ghost btn-icon"
           onClick={onToggleFullscreen}
-          title="Fullscreen (F)"
-          aria-label="Fullscreen"
+          title={`${t.fullscreen} (F)`}
+          aria-label={t.fullscreen}
         >
           ⛶
         </button>
