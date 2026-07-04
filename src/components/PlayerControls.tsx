@@ -16,6 +16,8 @@ interface Props {
   playbackRate: number;
   loop: boolean;
   showLayers: boolean;
+  fitToWindow: boolean;
+  onToggleFitToWindow: () => void;
   onToggleLayers: () => void;
   onTogglePlay: () => void;
   onSeek: (t: number) => void;
@@ -40,6 +42,7 @@ export default function PlayerControls({
   playbackRate,
   loop,
   showLayers,
+  fitToWindow,
   onTogglePlay,
   onSeek,
   onSetVolume,
@@ -50,6 +53,7 @@ export default function PlayerControls({
   onStepFrame,
   onSaveTemplate,
   onToggleLayers,
+  onToggleFitToWindow,
 }: Props) {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
@@ -60,11 +64,39 @@ export default function PlayerControls({
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       if (speedRef.current && !speedRef.current.contains(e.target as Node)) setShowSpeedMenu(false);
-      if (volRef.current && !volRef.current.contains(e.target as Node)) setShowVolume(false);
+      if (volRef.current && !volRef.current.contains(e.target as Node)) {
+        cancelVolumeClose();
+        setShowVolume(false);
+      }
     };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
+
+  // Volume-popup hover handling.
+  // The popup floats ABOVE the button (positioned with bottom: calc(100% + 6px)),
+  // so it sits outside the wrapper's bounding box. Without a delay, the user's
+  // mouse briefly leaves the wrapper while traversing the 6px gap between the
+  // button and the popup — onMouseLeave fires and the popup closes before the
+  // mouse ever reaches it.
+  //
+  // Fix: defer the close with a 200ms timer. If the mouse enters the popup
+  // (or the wrapper) within that window, cancel the timer.
+  const volCloseTimerRef = useRef<number | null>(null);
+  const cancelVolumeClose = () => {
+    if (volCloseTimerRef.current != null) {
+      window.clearTimeout(volCloseTimerRef.current);
+      volCloseTimerRef.current = null;
+    }
+  };
+  const scheduleVolumeClose = () => {
+    cancelVolumeClose();
+    volCloseTimerRef.current = window.setTimeout(() => {
+      volCloseTimerRef.current = null;
+      setShowVolume(false);
+    }, 200);
+  };
+  useEffect(() => () => cancelVolumeClose(), []);
 
   const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -166,7 +198,15 @@ export default function PlayerControls({
         </button>
 
         {/* Volume control */}
-        <div ref={volRef} style={{ position: 'relative' }} onMouseEnter={() => setShowVolume(true)} onMouseLeave={() => setShowVolume(false)}>
+        <div
+          ref={volRef}
+          style={{ position: 'relative' }}
+          onMouseEnter={() => {
+            cancelVolumeClose();
+            setShowVolume(true);
+          }}
+          onMouseLeave={scheduleVolumeClose}
+        >
           <button
             className="btn btn-ghost btn-icon"
             onClick={onToggleMute}
@@ -177,6 +217,8 @@ export default function PlayerControls({
           </button>
           {showVolume && (
             <div
+              onMouseEnter={cancelVolumeClose}
+              onMouseLeave={scheduleVolumeClose}
               style={{
                 position: 'absolute',
                 bottom: 'calc(100% + 6px)',
@@ -291,6 +333,18 @@ export default function PlayerControls({
             </div>
           )}
         </div>
+
+        {/* Fit-to-window: hide sidebars + layer panel so video fills the
+            available area between title bar and controls.  Different from
+            fullscreen, which expands to the whole monitor. */}
+        <button
+          className={`btn btn-ghost btn-icon ${fitToWindow ? 'btn-primary' : ''}`}
+          onClick={onToggleFitToWindow}
+          title={`${fitToWindow ? t.exitFitToWindow : t.fitToWindow} (W)`}
+          aria-label={fitToWindow ? t.exitFitToWindow : t.fitToWindow}
+        >
+          ⤢
+        </button>
 
         {/* Fullscreen */}
         <button

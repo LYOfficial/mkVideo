@@ -83,6 +83,8 @@ export interface Translations {
   loopOn: string;
   loopOff: string;
   fullscreen: string;
+  fitToWindow: string;
+  exitFitToWindow: string;
   playbackSpeed: string;
   toggleMaskPanel: string;
   saveAsTemplate: string;
@@ -196,6 +198,8 @@ const zhCN: Translations = {
   loopOn: '已开启循环',
   loopOff: '未开启循环',
   fullscreen: '全屏',
+  fitToWindow: '窗口内放大',
+  exitFitToWindow: '退出窗口内放大',
   playbackSpeed: '播放倍速',
   toggleMaskPanel: '遮罩工具',
   saveAsTemplate: '另存为模板',
@@ -305,6 +309,8 @@ const en: Translations = {
   loopOn: 'Loop on',
   loopOff: 'Loop off',
   fullscreen: 'Fullscreen',
+  fitToWindow: 'Fit to window',
+  exitFitToWindow: 'Exit fit-to-window',
   playbackSpeed: 'Playback speed',
   toggleMaskPanel: 'Masks',
   saveAsTemplate: 'Save as Template',

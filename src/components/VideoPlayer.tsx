@@ -17,7 +17,7 @@ interface Props {
 }
 
 export default function VideoPlayer({ collection }: Props) {
-  const { selectedVideoId, setSelectedVideoId } = usePlayer();
+  const { selectedVideoId, setSelectedVideoId, fitToWindow, setFitToWindow, toggleFitToWindow } = usePlayer();
   const { data, updateTemplate, getTemplatesForVideo } = useApp();
   const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -256,6 +256,10 @@ export default function VideoPlayer({ collection }: Props) {
         case 'f':
           toggleFullscreen();
           break;
+        case 'w':
+          // Fit-to-window: hide sidebars + layer panel.
+          toggleFitToWindow();
+          break;
         case 'Delete':
         case 'Backspace':
           if (selectedMaskId && window.__maskCanvasApi) {
@@ -264,6 +268,11 @@ export default function VideoPlayer({ collection }: Props) {
           }
           break;
         case 'Escape':
+          if (fitToWindow) {
+            // First priority in fit-to-window mode: exit it.
+            setFitToWindow(false);
+            return;
+          }
           if (window.__maskCanvasApi) {
             window.__maskCanvasApi.stopEdit();
             window.__maskCanvasApi.setTool({ kind: 'select' });
@@ -276,6 +285,7 @@ export default function VideoPlayer({ collection }: Props) {
   }, [
     togglePlay, seek, stepFrame, toggleMute, toggleLoop,
     collection.videos, selectedVideoId, setSelectedVideoId, selectedMaskId,
+    fitToWindow, setFitToWindow, toggleFitToWindow,
   ]);
 
   const videoSrc = video && isTauriEnv() ? convertFileSrc(video.path) : '';
@@ -391,7 +401,7 @@ export default function VideoPlayer({ collection }: Props) {
           </MaskCanvas>
         </div>
 
-        {showLayers && (
+        {showLayers && !fitToWindow && (
           <LayerPanel
             masks={layerMasks}
             videoId={video.id}
@@ -412,6 +422,8 @@ export default function VideoPlayer({ collection }: Props) {
         playbackRate={playbackRate}
         loop={loop}
         showLayers={showLayers}
+        fitToWindow={fitToWindow}
+        onToggleFitToWindow={toggleFitToWindow}
         onToggleLayers={() => setShowLayers((v) => !v)}
         onTogglePlay={togglePlay}
         onSeek={seek}

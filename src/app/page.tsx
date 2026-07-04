@@ -5,9 +5,11 @@ import Sidebar from '@/components/Sidebar';
 import MainView from '@/components/MainView';
 import TitleBar from '@/components/TitleBar';
 import { useApp } from '@/lib/AppContext';
+import { usePlayer } from '@/lib/PlayerContext';
 
 export default function HomePage() {
   const { loaded } = useApp();
+  const { fitToWindow } = usePlayer();
   const [showLoading, setShowLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export default function HomePage() {
     <div className="flex flex-col" style={{ height: '100vh', width: '100vw' }}>
       <TitleBar />
       <div className="flex flex-1" style={{ minHeight: 0 }}>
-        <Sidebar />
+        {!fitToWindow && <Sidebar />}
         <MainView />
       </div>
     </div>

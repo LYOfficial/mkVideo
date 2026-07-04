@@ -8,7 +8,7 @@ import VideoPlayer from './VideoPlayer';
 
 export default function MainView() {
   const { data } = useApp();
-  const { selectedCollectionId } = usePlayer();
+  const { selectedCollectionId, fitToWindow } = usePlayer();
   const t = useT();
   const collection = data.collections.find((c) => c.id === selectedCollectionId);
 
@@ -50,7 +50,7 @@ export default function MainView() {
       className="flex flex-1"
       style={{ minWidth: 0, minHeight: 0, background: 'var(--bg-primary)' }}
     >
-      <VideoList collection={collection} />
+      {!fitToWindow && <VideoList collection={collection} />}
       <VideoPlayer collection={collection} />
     </main>
   );

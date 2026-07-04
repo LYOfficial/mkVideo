@@ -41,8 +41,15 @@ export default function LayerPanel({ masks, onClose }: Props) {
 
   const handleFillChange = (c: string) => {
     setFillColor(c);
-    if (window.__maskTool && window.__maskTool.kind === 'draw') {
-      window.__maskTool = { ...window.__maskTool, fill: c };
+    const tool = window.__maskTool;
+    const api = window.__maskCanvasApi;
+    if (tool && tool.kind === 'draw') {
+      // While in draw mode, the colour applies to the *next* mask being drawn.
+      window.__maskTool = { ...tool, fill: c };
+    } else if (api && api.getSelectedId()) {
+      // In select mode with a selected mask, apply the colour directly.
+      // Empty string / 'transparent' falls through to the same channel.
+      api.updateSelectedFill(c);
     }
   };
 

@@ -146,27 +146,50 @@ export default function MaskCanvas({
       const vRect = v.getBoundingClientRect();
       const x = vRect.left - wRect.left;
       const y = vRect.top - wRect.top;
-      setVideoRect({ x, y, w: vRect.width, h: vRect.height });
+      const w = vRect.width;
+      const h = vRect.height;
+
       const c = canvasRef.current;
+      const dpr = window.devicePixelRatio || 1;
       if (c) {
-        const dpr = window.devicePixelRatio || 1;
-        c.width = Math.max(1, Math.floor(wRect.width * dpr));
-        c.height = Math.max(1, Math.floor(wRect.height * dpr));
+        const newCw = Math.max(1, Math.floor(wRect.width * dpr));
+        const newCh = Math.max(1, Math.floor(wRect.height * dpr));
+        // IMPORTANT: assigning canvas.width (or .height) clears the canvas
+        // state, even when the value matches the current size.  That's why
+        // the previous version, which reset the size every 500 ms, made the
+        // mask flicker — the canvas was wiped between paint frames.
+        if (c.width !== newCw || c.height !== newCh) {
+          c.width = newCw;
+          c.height = newCh;
+        }
         c.style.width = `${wRect.width}px`;
         c.style.height = `${wRect.height}px`;
         const ctx = c.getContext('2d');
         if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
+
+      // Only update state if the rect actually changed, so React doesn't
+      // re-render and force a redraw every 500 ms.
+      setVideoRect((prev) =>
+        prev.x === x && prev.y === y && prev.w === w && prev.h === h
+          ? prev
+          : { x, y, w, h },
+      );
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     window.addEventListener('resize', measure);
-    const t = setInterval(measure, 500);
+    // A handful of delayed measurements is enough to catch the moment when
+    // the <video> element finishes loading metadata and gets its real size.
+    const pending: number[] = [];
+    [100, 400, 800, 1500, 3000].forEach((delay) => {
+      pending.push(window.setTimeout(measure, delay));
+    });
     return () => {
       ro.disconnect();
       window.removeEventListener('resize', measure);
-      clearInterval(t);
+      pending.forEach((id) => clearTimeout(id));
     };
   }, [videoRef]);
 
@@ -551,16 +574,33 @@ export default function MaskCanvas({
     drawingRef.current = null;
   }, [emitChange, localMasks, setSelectedId]);
 
+  // ----- Global mousemove / mouseup listeners -----
+  // IMPORTANT: the listeners must be attached for the entire lifetime of the
+  // component, NOT conditionally on `drawingRef.current` being truthy.
+  // The previous implementation wrapped `addEventListener` in
+  // `if (drawingRef.current) { ... }`, but useEffect only re-runs when its
+  // dependency array changes. Setting `drawingRef.current` imperatively in
+  // `onMouseDown` does NOT trigger a re-run, so the listeners were never
+  // attached at all — drawing silently did nothing.
+  //
+  // We instead register the listeners exactly once on mount, and route them
+  // through refs that always point at the latest version of the callbacks.
+  // This avoids stale-closure problems while keeping the listeners alive
+  // for the full life of the component.
+  const moveHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
+  const upHandlerRef = useRef<(() => void) | null>(null);
+  moveHandlerRef.current = onMouseMove;
+  upHandlerRef.current = onMouseUp;
   useEffect(() => {
-    if (drawingRef.current) {
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
-      return () => {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-      };
-    }
-  }, [onMouseMove, onMouseUp]);
+    const onMove = (e: MouseEvent) => moveHandlerRef.current?.(e);
+    const onUp = () => upHandlerRef.current?.();
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
 
   // Double-click to finalize polygon/curve
   const onDoubleClick = useCallback(() => {
@@ -628,6 +668,52 @@ export default function MaskCanvas({
       clearAll: () => emitChange([]),
       getMasks: () => localMasks,
       getSelectedId: () => selectedId,
+      // Update the fill color of the currently selected mask in place.
+      // No-op if nothing is selected or if the mask is locked.
+      updateSelectedFill: (color: string) => {
+        if (!selectedId) return;
+        const target = localMasks.find((mm) => mm.id === selectedId);
+        if (!target || target.locked) return;
+        emitChange(
+          localMasks.map((mm) =>
+            mm.id === selectedId ? ({ ...mm, fill: color } as MaskWithTemplate) : mm,
+          ),
+        );
+      },
+      // Update the opacity of the currently selected mask in place.
+      updateSelectedOpacity: (opacity: number) => {
+        if (!selectedId) return;
+        const target = localMasks.find((mm) => mm.id === selectedId);
+        if (!target || target.locked) return;
+        const clamped = Math.max(0, Math.min(1, opacity));
+        emitChange(
+          localMasks.map((mm) =>
+            mm.id === selectedId ? ({ ...mm, opacity: clamped } as MaskWithTemplate) : mm,
+          ),
+        );
+      },
+      // Toggle visibility of the currently selected mask.
+      toggleSelectedVisible: () => {
+        if (!selectedId) return;
+        const target = localMasks.find((mm) => mm.id === selectedId);
+        if (!target) return;
+        emitChange(
+          localMasks.map((mm) =>
+            mm.id === selectedId ? ({ ...mm, visible: !mm.visible } as MaskWithTemplate) : mm,
+          ),
+        );
+      },
+      // Toggle lock state of the currently selected mask.
+      toggleSelectedLocked: () => {
+        if (!selectedId) return;
+        const target = localMasks.find((mm) => mm.id === selectedId);
+        if (!target) return;
+        emitChange(
+          localMasks.map((mm) =>
+            mm.id === selectedId ? ({ ...mm, locked: !mm.locked } as MaskWithTemplate) : mm,
+          ),
+        );
+      },
     };
   }, [selectedId, removeMask, localMasks, emitChange]);
 
@@ -740,6 +826,10 @@ declare global {
       clearAll: () => void;
       getMasks: () => MaskWithTemplate[];
       getSelectedId: () => string | null;
+      updateSelectedFill: (color: string) => void;
+      updateSelectedOpacity: (opacity: number) => void;
+      toggleSelectedVisible: () => void;
+      toggleSelectedLocked: () => void;
     };
   }
 }
