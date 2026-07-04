@@ -57,7 +57,8 @@
         "languages": ["SimpChinese"],
         "displayLanguageSelector": false,
         "installerIcon": "icons/icon.ico",
-        "uninstallerIcon": "icons/icon.ico"
+        "uninstallerIcon": "icons/icon.ico",
+        "installerHooks": "installer_hooks.nsh"
       }
     }
   },

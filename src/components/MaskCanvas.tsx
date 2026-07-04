@@ -332,6 +332,26 @@ export default function MaskCanvas({
   );
 
   // ----- Mouse handlers -----
+  //
+  // Single-click on empty video area → toggle play/pause.
+  // The canvas overlay sits on top of the <video> element, so clicks never
+  // reach the video's own onClick. To preserve "click-to-play/pause" without
+  // breaking mask editing, we:
+  //   1. on mousedown in select mode over empty space, remember the start
+  //      position and mark it as "candidate click on empty video area".
+  //   2. on mouseup, if the mouse barely moved AND we're still in the
+  //      "candidate click" state, call v.play() / v.pause() ourselves.
+  // A drag (mouse moved > ~5 px) cancels the candidate so resize/translate
+  // of an existing mask still works.
+  const CLICK_DRAG_THRESHOLD_PX = 5;
+  const pendingClickRef = useRef<{
+    clientX: number;
+    clientY: number;
+    onEmptyVideoArea: boolean;
+    nx: number;
+    ny: number;
+  } | null>(null);
+
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 0) return;
@@ -365,6 +385,7 @@ export default function MaskCanvas({
                 baseMask: m,
               };
               e.preventDefault();
+              pendingClickRef.current = null;
               return;
             }
           }
@@ -387,6 +408,7 @@ export default function MaskCanvas({
           fill: window.__maskTool.fill,
         };
         e.preventDefault();
+        pendingClickRef.current = null;
         return;
       }
 
@@ -394,9 +416,21 @@ export default function MaskCanvas({
       const top = findTopmostMask(norm.nx, norm.ny);
       if (!top) {
         setSelectedId(null);
+        // Remember this mousedown as a potential click-to-toggle-play/pause.
+        // We only treat it as such on mouseup, and only if the mouse barely
+        // moved, so accidental drags over empty area don't toggle playback.
+        pendingClickRef.current = {
+          clientX: e.clientX,
+          clientY: e.clientY,
+          onEmptyVideoArea: true,
+          nx: norm.nx,
+          ny: norm.ny,
+        };
         return;
       }
       setSelectedId(top.id);
+      // Click on a mask — not a video-toggle candidate.
+      pendingClickRef.current = null;
 
       const handle = getResizeHandle(top, norm.nx, norm.ny);
       if (handle) {
@@ -424,6 +458,18 @@ export default function MaskCanvas({
   const onMouseMove = useCallback(
     (e: MouseEvent) => {
       const d = drawingRef.current;
+      // If we never started a real drag (drawingRef is null) but the mouse
+      // moved beyond the click-drag threshold while a click was pending,
+      // cancel the click — the user is dragging across empty video area,
+      // not clicking.
+      if (!d && pendingClickRef.current) {
+        const pc = pendingClickRef.current;
+        const dx = e.clientX - pc.clientX;
+        const dy = e.clientY - pc.clientY;
+        if (dx * dx + dy * dy > CLICK_DRAG_THRESHOLD_PX * CLICK_DRAG_THRESHOLD_PX) {
+          pendingClickRef.current = null;
+        }
+      }
       if (!d) return;
       const norm = toNorm(e.clientX, e.clientY);
       if (!norm) return;
@@ -559,20 +605,48 @@ export default function MaskCanvas({
     [toNorm, emitChange, localMasks, replaceMask],
   );
 
-  const onMouseUp = useCallback(() => {
-    const d = drawingRef.current;
-    if (!d) return;
-    if (d.type === 'draw-new') {
-      // Replace draft with real id
-      const draft = localMasks.find((p) => p.id === 'draft');
-      if (draft) {
-        const real: MaskWithTemplate = { ...draft, id: newId('mk') } as MaskWithTemplate;
-        emitChange([...localMasks.filter((m) => m.id !== 'draft'), real]);
-        setSelectedId(real.id);
+  const onMouseUp = useCallback(
+    (e?: MouseEvent) => {
+      const d = drawingRef.current;
+      // If we were dragging (draw/translate/resize/edit-point), finalise it.
+      if (d && d.type === 'draw-new') {
+        // Replace draft with real id
+        const draft = localMasks.find((p) => p.id === 'draft');
+        if (draft) {
+          const real: MaskWithTemplate = { ...draft, id: newId('mk') } as MaskWithTemplate;
+          emitChange([...localMasks.filter((m) => m.id !== 'draft'), real]);
+          setSelectedId(real.id);
+        }
       }
-    }
-    drawingRef.current = null;
-  }, [emitChange, localMasks, setSelectedId]);
+
+      // Click-to-toggle-play/pause:
+      //   - pendingClickRef was set on mousedown over empty video area in
+      //     select mode (no mask under cursor).
+      //   - no real drag ever started (drawingRef is null).
+      //   - the mouse barely moved between mousedown and mouseup.
+      // → toggle video play/pause. Mirrors the <video onClick> behaviour
+      // that the canvas overlay would otherwise swallow.
+      const pc = pendingClickRef.current;
+      if (pc && !d && e) {
+        const dx = e.clientX - pc.clientX;
+        const dy = e.clientY - pc.clientY;
+        if (dx * dx + dy * dy <= CLICK_DRAG_THRESHOLD_PX * CLICK_DRAG_THRESHOLD_PX) {
+          const v = videoRef.current;
+          if (v) {
+            if (v.paused) {
+              v.play().catch(() => {});
+            } else {
+              v.pause();
+            }
+          }
+        }
+      }
+
+      drawingRef.current = null;
+      pendingClickRef.current = null;
+    },
+    [emitChange, localMasks, setSelectedId, videoRef],
+  );
 
   // ----- Global mousemove / mouseup listeners -----
   // IMPORTANT: the listeners must be attached for the entire lifetime of the
@@ -588,12 +662,12 @@ export default function MaskCanvas({
   // This avoids stale-closure problems while keeping the listeners alive
   // for the full life of the component.
   const moveHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
-  const upHandlerRef = useRef<(() => void) | null>(null);
+  const upHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
   moveHandlerRef.current = onMouseMove;
   upHandlerRef.current = onMouseUp;
   useEffect(() => {
     const onMove = (e: MouseEvent) => moveHandlerRef.current?.(e);
-    const onUp = () => upHandlerRef.current?.();
+    const onUp = (e: MouseEvent) => upHandlerRef.current?.(e);
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
     return () => {
